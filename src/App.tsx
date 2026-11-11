@@ -181,7 +181,7 @@ export default function App() {
             <Seg value={ang} options={[['rad', 'rad'], ['deg', 'deg']]} onChange={setAng} />
             <Seg value={win} options={[['rect', 'Rectangular'], ['hann', 'Hann window']]} onChange={setWin} />
           </div>
-          <div className="grid3" style={{ gridTemplateColumns: '1fr 1fr' }}>
+          <div className="grid3" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
             <SignalPlotter title={domain === 'discrete' ? '|X(e^{jω})| (DTFT)' : '|X(f)| (CTFT estimate)'} traces={[specTraces('mag')]} xLabel="f (Hz)" yLabel={mag === 'db' ? 'dB' : 'magnitude'} xRange={[-fView, fView]} height={240} />
             <SignalPlotter title="∠X(f)" traces={[specTraces('phase')]} xLabel="f (Hz)" yLabel={ang} xRange={[-fView, fView]} height={240} />
           </div>
