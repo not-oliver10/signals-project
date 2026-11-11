@@ -141,7 +141,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <header><h1>SignalLab</h1><span>MCT 223 Signals and Systems simulator</span></header>
+      <header><h1>Signal Simulation</h1><span>Signals and Systems simulator</span></header>
       <aside>
         <fieldset>
           <legend>Time axis</legend>
