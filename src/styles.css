@@ -9,7 +9,7 @@
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--paper); color: var(--ink); font: 14px/1.45 "Instrument Sans", system-ui, sans-serif; }
-.app { display: grid; grid-template-columns: 300px 1fr; grid-template-rows: auto 1fr; min-height: 100vh; }
+.app { display: grid; grid-template-columns: 300px minmax(0, 1fr); grid-template-rows: auto 1fr; min-height: 100vh; }
 header { grid-column: 1 / -1; padding: 14px 22px; border-bottom: 1px solid var(--line); background: var(--panel); display: flex; align-items: baseline; gap: 14px; }
 header h1 { margin: 0; font-size: 20px; letter-spacing: -0.01em; }
 header span { color: var(--muted); }
@@ -31,7 +31,8 @@ main { padding: 14px 18px 30px; min-width: 0; }
 .tabs button { background: none; border: 0; border-bottom: 3px solid transparent; padding: 8px 14px; cursor: pointer; color: var(--muted); font-weight: 500; }
 .tabs button[aria-selected=true] { color: var(--ink); border-bottom-color: var(--accent); }
 .toolbar { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 10px; }
-.plot { margin: 0 0 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 8px 8px 6px; }
+.cv { width: 100%; overflow: hidden; }
+.plot { min-width: 0; overflow: hidden; margin: 0 0 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 8px 8px 6px; }
 .plot figcaption { font-weight: 600; padding: 0 4px 2px; }
 .readout { color: var(--muted); font-size: 12px; padding: 2px 4px; min-height: 18px; font-variant-numeric: tabular-nums; }
 .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
