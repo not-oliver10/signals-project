@@ -29,7 +29,7 @@ function nearest(t: Trace, x: number): number {
 
 /** Canvas scope: grid, wheel-zoom, drag-pan, hover readout, two click-placed cursors, double-click to reset. */
 export function SignalPlotter({ traces, title, xLabel = 't (s)', yLabel = '', xLog = false, xRange, height = 260 }: Props) {
-  const wrap = useRef<HTMLDivElement>(null), cv = useRef<HTMLCanvasElement>(null);
+  const wrap = useRef<HTMLDivElement>(null), box = useRef<HTMLDivElement>(null), cv = useRef<HTMLCanvasElement>(null);
   const [w, setW] = useState(600);
   const [view, setView] = useState<[number, number] | null>(null);
   const [hover, setHover] = useState<number | null>(null);
@@ -47,13 +47,25 @@ export function SignalPlotter({ traces, title, xLabel = 't (s)', yLabel = '', xL
   }, [traces, xRange?.[0], xRange?.[1], xLog]);
   useEffect(() => { setView(null); setCursors([]); }, [auto[0], auto[1]]);
 
+  const ext = useMemo<[number, number]>(() => {
+    let lo = Infinity, hi = -Infinity;
+    for (const t of traces) for (const x of t.x) { if (xLog && x <= 0) continue; const q = tx(x); if (q < lo) lo = q; if (q > hi) hi = q; }
+    return lo < hi ? [lo, hi] : auto;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [traces, xLog, auto]);
+  // keep the view inside the data: can't pan past either end or zoom out beyond the full range
+  const clamp = (a: number, b: number): [number, number] => {
+    const full = ext[1] - ext[0], span = Math.min(Math.max(b - a, full * 1e-3), full);
+    const lo = Math.min(Math.max(a, ext[0]), ext[1] - span);
+    return [lo, lo + span];
+  };
   const v = view ?? auto, pw = w - M.l - M.r, ph = height - M.t - M.b;
   const px2x = (px: number) => v[0] + ((px - M.l) / pw) * (v[1] - v[0]);
 
   useEffect(() => {
-    const el = wrap.current; if (!el) return;
-    const ro = new ResizeObserver(() => setW(Math.max(280, el.clientWidth)));
-    ro.observe(el); setW(Math.max(280, el.clientWidth));
+    const el = box.current; if (!el) return;
+    const ro = new ResizeObserver(() => setW(Math.max(200, Math.floor(el.clientWidth))));
+    ro.observe(el); setW(Math.max(200, Math.floor(el.clientWidth)));
     return () => ro.disconnect();
   }, []);
 
@@ -63,11 +75,11 @@ export function SignalPlotter({ traces, title, xLabel = 't (s)', yLabel = '', xL
       e.preventDefault();
       const rect = c.getBoundingClientRect(), f = Math.exp(e.deltaY * 0.0015);
       const cur = view ?? auto, vx = cur[0] + ((e.clientX - rect.left - M.l) / pw) * (cur[1] - cur[0]);
-      setView([vx - (vx - cur[0]) * f, vx + (cur[1] - vx) * f]);
+      setView(clamp(vx - (vx - cur[0]) * f, vx + (cur[1] - vx) * f));
     };
     c.addEventListener('wheel', onWheel, { passive: false });
     return () => c.removeEventListener('wheel', onWheel);
-  }, [view, auto, pw]);
+  }, [view, auto, pw, ext]);
 
   // ---- drawing ----
   useEffect(() => {
@@ -147,16 +159,16 @@ export function SignalPlotter({ traces, title, xLabel = 't (s)', yLabel = '', xL
   return (
     <figure className="plot" ref={wrap}>
       {title && <figcaption>{title}</figcaption>}
-      <canvas ref={cv} style={{ width: w, height, touchAction: 'none', cursor: drag.current ? 'grabbing' : 'crosshair' }}
+      <div ref={box} className="cv"><canvas ref={cv} style={{ display: 'block', width: w, height, touchAction: 'none', cursor: drag.current ? 'grabbing' : 'crosshair' }}
         onPointerDown={(e) => { cv.current!.setPointerCapture(e.pointerId); drag.current = { px: pos(e), v, moved: false }; }}
         onPointerMove={(e) => {
           const px = pos(e), d = drag.current;
-          if (d && Math.abs(px - d.px) > 3) { d.moved = true; const dv = ((px - d.px) / pw) * (d.v[1] - d.v[0]); setView([d.v[0] - dv, d.v[1] - dv]); }
+          if (d && Math.abs(px - d.px) > 3) { d.moved = true; const dv = ((px - d.px) / pw) * (d.v[1] - d.v[0]); setView(clamp(d.v[0] - dv, d.v[1] - dv)); }
           setHover(px2x(px));
         }}
         onPointerUp={(e) => { const d = drag.current; drag.current = null; if (d && !d.moved) setCursors((c) => (c.length >= 2 ? [px2x(pos(e))] : [...c, px2x(pos(e))])); }}
         onPointerLeave={() => setHover(null)}
-        onDoubleClick={() => { setView(null); setCursors([]); }} />
+        onDoubleClick={() => { setView(null); setCursors([]); }} /></div>
       <div className="readout">
         {hover != null ? readout(hover) : 'Hover to read values. Scroll to zoom, drag to pan, click to place cursors A and B, double-click to reset.'}
         {cursors.length === 2 && <b>   Δx = {fmt(ix(cursors[1]) - ix(cursors[0]))}</b>}
